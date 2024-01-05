@@ -44,6 +44,14 @@ public class MainTests {
         Assert.assertEquals("0", readOutput(outputStream));
     }
 
+    @Test
+    public void parseInvalidJsonUnsuccessfully() throws IOException {
+        String json = "";
+        System.setIn(new ByteArrayInputStream(json.getBytes()));
+        Main.main(null);
+        Assert.assertEquals("1", readOutput(outputStream));
+    }
+
     private String readOutput(OutputStream stream){
         return outputStream.toString().trim();
     }

@@ -1,20 +1,37 @@
 package src.test.java;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Spy;
 import src.main.java.JsonParser;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 
 public class JsonParserTests{
-    @Spy private JsonParser jsonParser;
+    private JsonParser jsonParser;
+
+    @Before
+    public void initializeClass(){
+        jsonParser = new JsonParser();
+    }
 
     @Test
-    public void parsesBasicJsonStringCorrectly(){
+    public void parsesBasicJsonStringCorrectly() throws IOException {
         String jsonString = "{}";
-        Map<String, Object> parsedJson = jsonParser.parse(jsonString);
+        InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
+        Map<String, Object> parsedJson = jsonParser.parse(inputStream);
         Assert.assertNotNull(parsedJson);
         Assert.assertEquals(0, parsedJson.size());
+    }
+
+    @Test
+    public void unableToParseInvalidJson() throws IOException {
+        String jsonString = "";
+        InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
+        Map<String, Object> parsedJson = jsonParser.parse(inputStream);
+        Assert.assertNull(parsedJson);
     }
 }
