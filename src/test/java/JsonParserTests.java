@@ -19,6 +19,22 @@ public class JsonParserTests{
     }
 
     @Test
+    public void failValidationOnInvalidJson(){
+        String jsonString = "";
+        InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
+        int result = jsonParser.validate(inputStream);
+        Assert.assertEquals(1, result);
+    }
+
+    @Test
+    public void passValidationOnValidJson(){
+        String jsonString = "{}";
+        InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
+        int result = jsonParser.validate(inputStream);
+        Assert.assertEquals(0, result);
+    }
+
+    @Test
     public void parsesBasicJsonStringCorrectly() throws IOException {
         String jsonString = "{}";
         InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());

@@ -16,6 +16,18 @@ public class JsonParser {
     private static final char SEMICOLON = ':';
     private static final char COMMA = ',';
 
+    public int validate(InputStream json) {
+        Map<String, Object> parsedJson;
+        try {
+            parsedJson = this.parse(json);
+        }catch(IOException exception){
+            parsedJson = null;
+            System.out.println("Exception when reading from IO");
+        }
+        if(parsedJson != null) return 0;
+        return 1;
+    }
+
     public Map<String, Object> parse(InputStream json) throws IOException {
         if(json.available() == 0) return null;
         Map<String, Object> map = new HashMap<>();
