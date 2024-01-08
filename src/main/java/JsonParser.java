@@ -39,7 +39,7 @@ public class JsonParser {
         List<Object> tokens = getTokens(json);
         if(tokens == null) return null;
         if(!tokens.get(0).equals(OPENING_CURLY_BRACE)) return null;
-        map = readJsonTokens(tokens, 1);
+        map = readJsonTokens(tokens, 0);
         return map;
     }
 
@@ -49,16 +49,29 @@ public class JsonParser {
             Object token = tokens.get(index);
             if(token instanceof Character && SPECIAL_CHARACTERS.contains((char) token)){
                 char charToken = (char) token;
+                if(charToken == CLOSING_CURLY_BRACE) return map;
                 if(charToken == SEMICOLON){
-                    Object prevToken = tokens.get(index - 1);
-                    if(prevToken == null) return null;
-                    if(!(prevToken instanceof String)) return null;
-                    String key = (String) prevToken;
-
-                }
+                    Object key = tokens.get(index - 1);
+                    if(!(key instanceof String)) return null;
+                    Object value = readValue(tokens, index + 1);
+                    if(value == null) return null;
+                    map.put((String) key, value);
+                  }
             }
         }
         return map;
+    }
+
+    private Object readValue(List<Object> tokens, Integer index){
+        Object token = tokens.get(index);
+        if(token instanceof Character && SPECIAL_CHARACTERS.contains((char) token)){
+            char charToken = (char) token;
+            if(charToken == OPENING_CURLY_BRACE){
+                return readJsonTokens(tokens, index + 1);
+            }
+        }
+        if(token instanceof String) return token;
+        return null;
     }
 
     private List<Object> getTokens(InputStream json) throws IOException {

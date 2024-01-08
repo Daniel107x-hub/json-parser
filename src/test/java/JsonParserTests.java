@@ -52,7 +52,7 @@ public class JsonParserTests{
     }
 
     @Test
-    public void parseStringKeyValueJson() throws IOException {
+    public void parseStringSingleKeyValueJson() throws IOException {
         String jsonString = "{\"key\":\"value\"}";
         InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
         Map<String, Object> parsedJson = jsonParser.parse(inputStream);
@@ -60,6 +60,24 @@ public class JsonParserTests{
         Assert.assertEquals(1, parsedJson.size());
         Object value = parsedJson.get("key");
         Assert.assertNotNull(value);
+        Assert.assertTrue(value instanceof String);
         Assert.assertEquals("value", value);
+    }
+
+    @Test
+    public void parseStringMultiKeyValueJson() throws IOException {
+        String jsonString = "{\"key1\":\"value1\", \"key2\":\"value2\"}";
+        InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
+        Map<String, Object> parsedJson = jsonParser.parse(inputStream);
+        Assert.assertNotNull(parsedJson);
+        Assert.assertEquals(2, parsedJson.size());
+        Object value1 = parsedJson.get("key1");
+        Assert.assertNotNull(value1);
+        Assert.assertTrue(value1 instanceof String);
+        Assert.assertEquals("value1", value1);
+        Object value2 = parsedJson.get("key2");
+        Assert.assertNotNull(value2);
+        Assert.assertTrue(value2 instanceof String);
+        Assert.assertEquals("value2", value2);
     }
 }
