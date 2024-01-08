@@ -50,4 +50,16 @@ public class JsonParserTests{
         Map<String, Object> parsedJson = jsonParser.parse(inputStream);
         Assert.assertNull(parsedJson);
     }
+
+    @Test
+    public void parseStringKeyValueJson() throws IOException {
+        String jsonString = "{\"key\":\"value\"}";
+        InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
+        Map<String, Object> parsedJson = jsonParser.parse(inputStream);
+        Assert.assertNotNull(parsedJson);
+        Assert.assertEquals(1, parsedJson.size());
+        Object value = parsedJson.get("key");
+        Assert.assertNotNull(value);
+        Assert.assertEquals("value", value);
+    }
 }
