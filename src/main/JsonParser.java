@@ -50,6 +50,12 @@ public class JsonParser {
             if(token instanceof Character && SPECIAL_CHARACTERS.contains((char) token)){
                 char charToken = (char) token;
                 if(charToken == CLOSING_CURLY_BRACE) return map;
+                if(charToken == COMMA){
+                    Object previousToken = tokens.get(index - 1);
+                    if(previousToken == null) return null;
+                    Object nextToken = tokens.get(index + 1);
+                    if(!(nextToken instanceof String)) return null;
+                }
                 if(charToken == SEMICOLON){
                     Object key = tokens.get(index - 1);
                     if(!(key instanceof String)) return null;

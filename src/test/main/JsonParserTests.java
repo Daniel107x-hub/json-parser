@@ -96,7 +96,7 @@ public class JsonParserTests{
         String jsonString = "{\"key\":\"value\",}";
         InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
         Map<String, Object> parsedJson = jsonParser.parse(inputStream);
-        System.out.println(" Hello");
+        Assert.assertNull(parsedJson);
     }
 
     private Map<String, String> generateRandomJsonWithNStringKeyValues(int pairs){
