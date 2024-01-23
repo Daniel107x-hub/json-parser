@@ -1,25 +1,43 @@
-package src.test.java;
+package src.test.main;
 
 import com.google.gson.Gson;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import src.main.java.JsonParser;
+import src.main.JsonParser;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
+import java.io.*;
+import java.util.*;
 
 public class JsonParserTests{
+     private static final String TEST_RESOURCES_PATH = "src/test/resources/";
+     private static final String[] TEST_DIRECTORIES = {"step1", "step2"};
     private JsonParser jsonParser;
 
     @Before
     public void initializeClass(){
         jsonParser = new JsonParser();
+    }
+
+    @Test
+    public void runAutoTests() throws FileNotFoundException {
+        for(String directoryName : TEST_DIRECTORIES){
+            File testsDirectory = new File(TEST_RESOURCES_PATH + directoryName);
+            File[] files = testsDirectory.listFiles();
+            if(files == null || files.length == 0) throw new NoSuchElementException("Unable to find any file in the test source path");
+            for(File file : files){
+                String name = file.getName();
+                InputStream stream = new FileInputStream(file);
+                int result = jsonParser.validate(stream);
+                try {
+                    if (name.contains("invalid")) Assert.assertEquals(1, result);
+                    else Assert.assertEquals(0, result);
+                }catch(AssertionError ae){
+                    System.out.println("Failed test: " + name + " in directory: " + directoryName);
+                    throw ae;
+                }
+            }
+        }
     }
 
     @Test
