@@ -95,14 +95,15 @@ public class JsonParser {
                 String stringValue = readString(json);
                 if(stringValue == null) return null; // If string is not closed, then return null in tokens
                 tokenList.add(stringValue);
+                continue;
             }
             json.mark(Integer.MAX_VALUE);
             Double numericValue = readNumeric(json);
             if(numericValue != null){
                 tokenList.add(numericValue);
-//                continue;
+                continue;
             }
-            json.reset();
+            return null;
             //TODO: Add boolean and nulls
         }
         if(json.available() > 0) return null;
@@ -117,7 +118,7 @@ public class JsonParser {
      * Except in the case of a ., when the number is interpreted as a decimal value.
      * In such case, it may only have a single .
      * @param stream
-     * @return
+     * @return Double value if parseable or null
      * @throws IOException
      */
     private Double readNumeric(InputStream stream) throws IOException {
@@ -126,13 +127,16 @@ public class JsonParser {
         char currentChar = (char) stream.read();
         boolean hasPointAppeared = false;
         while(stream.available() > 0){
-            if(Character.isLetter(currentChar)) return null;
+            if(!Character.isDigit(currentChar) && !(POINT == currentChar || WHITESPACE == currentChar)) return null;
             if(WHITESPACE == currentChar) break;
-
+            if(POINT == currentChar){
+                if(hasPointAppeared) return null;
+                hasPointAppeared = true;
+            }
             stringBuilder.append(currentChar);
             currentChar = (char) stream.read();
         }
-        return 1D;
+        return Double.parseDouble(stringBuilder.toString());
     }
 
     private String readString(InputStream stream) throws IOException {
