@@ -12,6 +12,8 @@ public class JsonParser {
     private static final char DOUBLE_QUOTES = '"';
     private static final char SEMICOLON = ':';
     private static final char COMMA = ',';
+    private static final char WHITESPACE = ' ';
+    private static final char POINT = '.';
     private static final Set<Character> SPECIAL_CHARACTERS = new HashSet<>(Arrays.asList(
             OPENING_CURLY_BRACE,
             CLOSING_CURLY_BRACE,
@@ -84,6 +86,7 @@ public class JsonParser {
         List<Object> tokenList = new ArrayList<>();
         while(json.available() > 0){
             char c = (char) json.read();
+            if(WHITESPACE == c) continue;
             if(SPECIAL_CHARACTERS.contains(c)){
                 tokenList.add(c);
                 continue;
@@ -93,8 +96,43 @@ public class JsonParser {
                 if(stringValue == null) return null; // If string is not closed, then return null in tokens
                 tokenList.add(stringValue);
             }
+            json.mark(Integer.MAX_VALUE);
+            Double numericValue = readNumeric(json);
+            if(numericValue != null){
+                tokenList.add(numericValue);
+//                continue;
+            }
+            json.reset();
+            //TODO: Add boolean and nulls
         }
+        if(json.available() > 0) return null;
         return tokenList;
+    }
+
+    /**
+     * Numbers in json are read until we find:
+     *  - Whitespace
+     *  - Comma
+     * In case we find a alphabetic character, we will return this as null
+     * Except in the case of a ., when the number is interpreted as a decimal value.
+     * In such case, it may only have a single .
+     * @param stream
+     * @return
+     * @throws IOException
+     */
+    private Double readNumeric(InputStream stream) throws IOException {
+        if(stream.available() <= 0) return null;
+        StringBuilder stringBuilder = new StringBuilder();
+        char currentChar = (char) stream.read();
+        boolean hasPointAppeared = false;
+        while(stream.available() > 0){
+            if(Character.isLetter(currentChar)) return null;
+            if(WHITESPACE == currentChar) break;
+
+            stringBuilder.append(currentChar);
+            currentChar = (char) stream.read();
+        }
+        return 1D;
     }
 
     private String readString(InputStream stream) throws IOException {

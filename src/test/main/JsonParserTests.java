@@ -11,7 +11,7 @@ import java.util.*;
 
 public class JsonParserTests{
      private static final String TEST_RESOURCES_PATH = "src/test/resources/";
-     private static final String[] TEST_DIRECTORIES = {"step1", "step2"};
+     private static final String[] TEST_DIRECTORIES = {"step1", "step2", "step3"};
     private JsonParser jsonParser;
 
     @Before
@@ -97,6 +97,26 @@ public class JsonParserTests{
         InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
         Map<String, Object> parsedJson = jsonParser.parse(inputStream);
         Assert.assertNull(parsedJson);
+    }
+
+    @Test
+    public void parseJsonWithNumericValue() throws IOException {
+        String jsonString = "{\"number\": 1}";
+        InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
+        Map<String, Object> parsedJson = jsonParser.parse(inputStream);
+        Assert.assertNotNull(parsedJson);
+        int value = (int) parsedJson.get("number");
+        Assert.assertEquals(1, value);
+    }
+
+    @Test
+    public void parseJsonWithFloatValue() throws IOException {
+        String jsonString = "{\"number\": 1.1}";
+        InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
+        Map<String, Object> parsedJson = jsonParser.parse(inputStream);
+        Assert.assertNotNull(parsedJson);
+        double value = (double) parsedJson.get("number");
+        Assert.assertEquals(1.1, value, 0);
     }
 
     private Map<String, String> generateRandomJsonWithNStringKeyValues(int pairs){
