@@ -55,8 +55,6 @@ public class JsonParser {
                 char charToken = (char) token;
                 if(charToken == CLOSING_CURLY_BRACE) return map;
                 if(charToken == COMMA){
-                    Object previousToken = tokens.get(index - 1);
-                    if(previousToken == null) return null;
                     Object nextToken = tokens.get(index + 1);
                     if(!(nextToken instanceof String)) return null;
                 }
@@ -64,7 +62,6 @@ public class JsonParser {
                     Object key = tokens.get(index - 1);
                     if(!(key instanceof String)) return null;
                     Object value = readValue(tokens, index + 1);
-                    if(value == null) return null;
                     map.put((String) key, value);
                   }
             }
@@ -82,6 +79,7 @@ public class JsonParser {
         }
         if(token instanceof String) return token;
         if(token instanceof Integer) return token;
+        if(token instanceof Boolean) return token;
         return null;
     }
 
@@ -109,22 +107,56 @@ public class JsonParser {
                 tokenList.add(numericValue);
                 continue;
             }
+            json.reset();
+            json.mark(Integer.MAX_VALUE);
+            Boolean booleanValue = readBoolean(json);
+            if(booleanValue != null){
+                tokenList.add(booleanValue);
+                continue;
+            }
+            json.reset();
+            json.mark(Integer.MAX_VALUE);
+            boolean isNull = readNull(json);
+            if(isNull){
+                tokenList.add(null);
+                continue;
+            }
             return null;
-            //TODO: Add boolean and nulls
         }
         if(json.available() > 0) return null;
         return tokenList;
     }
 
+    private boolean readNull(InputStream stream) throws IOException {
+        char currentChar = (char) stream.read();
+        for(char letter : "null".toCharArray()){
+            if(letter != currentChar) return false;
+            stream.mark(Integer.MAX_VALUE);
+            currentChar = (char) stream.read();
+        }
+        stream.reset();
+        return true;
+    }
+
+    private Boolean readBoolean(InputStream stream) throws IOException {
+        char currentChar = (char) stream.read();
+        String booleanMatch;
+        if(currentChar == 't') booleanMatch = "true";
+        else if(currentChar == 'f') booleanMatch = "false";
+        else return null;
+        for(char letter : booleanMatch.toCharArray()){
+            if(letter != currentChar) return null;
+            stream.mark(Integer.MAX_VALUE);
+            currentChar = (char) stream.read();
+        }
+        stream.reset();
+        return Boolean.parseBoolean(booleanMatch);
+    }
+
     /**
-     * Numbers in json are read until we find:
-     *  - Whitespace
-     *  - Comma
-     * In case we find a alphabetic character, we will return this as null
-     * Except in the case of a ., when the number is interpreted as a decimal value.
-     * In such case, it may only have a single .
+     * Numbers in json are read until we find a character which is not a number
      * @param stream
-     * @return Double value if parseable or null
+     * @return Integer value if parseable or null
      * @throws IOException
      */
     private Integer readNumeric(InputStream stream) throws IOException {

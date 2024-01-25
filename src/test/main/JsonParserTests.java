@@ -109,6 +109,26 @@ public class JsonParserTests{
         Assert.assertEquals(1, value);
     }
 
+    @Test
+    public void parseJsonWithBooleanValue() throws IOException {
+        String jsonString = "{\"number\": false}";
+        InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
+        Map<String, Object> parsedJson = jsonParser.parse(inputStream);
+        Assert.assertNotNull(parsedJson);
+        boolean value = (boolean) parsedJson.get("number");
+        Assert.assertFalse(value);
+    }
+
+    @Test
+    public void parseJsonWithNullValue() throws IOException {
+        String jsonString = "{\"number\": null}";
+        InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
+        Map<String, Object> parsedJson = jsonParser.parse(inputStream);
+        Assert.assertNotNull(parsedJson);
+        Object value = parsedJson.get("number");
+        Assert.assertNull(value);
+    }
+
 
     private Map<String, String> generateRandomJsonWithNStringKeyValues(int pairs){
         Map<String, String> json = new HashMap<>();
