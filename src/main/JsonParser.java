@@ -14,6 +14,8 @@ public class JsonParser {
     private static final char COMMA = ',';
     private static final char WHITESPACE = ' ';
     private static final char POINT = '.';
+    private static final char CARRIAGE_RETURN = '\r';
+    private static final char NEW_LINE = '\n';
     private static final Set<Character> SPECIAL_CHARACTERS = new HashSet<>(Arrays.asList(
             OPENING_CURLY_BRACE,
             CLOSING_CURLY_BRACE,
@@ -79,26 +81,30 @@ public class JsonParser {
             }
         }
         if(token instanceof String) return token;
+        if(token instanceof Integer) return token;
         return null;
     }
 
     private List<Object> getTokens(InputStream json) throws IOException {
         List<Object> tokenList = new ArrayList<>();
         while(json.available() > 0){
+            json.mark(Integer.MAX_VALUE);
             char c = (char) json.read();
-            if(WHITESPACE == c) continue;
+            if(WHITESPACE == c || CARRIAGE_RETURN == c || NEW_LINE == c) continue;
             if(SPECIAL_CHARACTERS.contains(c)){
                 tokenList.add(c);
                 continue;
             }
-            if(DOUBLE_QUOTES == c){
-                String stringValue = readString(json);
-                if(stringValue == null) return null; // If string is not closed, then return null in tokens
+            json.reset();
+            json.mark(Integer.MAX_VALUE);
+            String stringValue = readString(json);
+            if(stringValue != null){
                 tokenList.add(stringValue);
                 continue;
             }
+            json.reset();
             json.mark(Integer.MAX_VALUE);
-            Double numericValue = readNumeric(json);
+            Integer numericValue = readNumeric(json);
             if(numericValue != null){
                 tokenList.add(numericValue);
                 continue;
@@ -121,31 +127,35 @@ public class JsonParser {
      * @return Double value if parseable or null
      * @throws IOException
      */
-    private Double readNumeric(InputStream stream) throws IOException {
-        if(stream.available() <= 0) return null;
-        StringBuilder stringBuilder = new StringBuilder();
+    private Integer readNumeric(InputStream stream) throws IOException {
         char currentChar = (char) stream.read();
-        boolean hasPointAppeared = false;
-        while(stream.available() > 0){
-            if(!Character.isDigit(currentChar) && !(POINT == currentChar || WHITESPACE == currentChar)) return null;
+        StringBuilder stringBuilder = new StringBuilder();
+        while(stream.available() > 0 && Character.isDigit(currentChar)){
             if(WHITESPACE == currentChar) break;
-            if(POINT == currentChar){
-                if(hasPointAppeared) return null;
-                hasPointAppeared = true;
-            }
             stringBuilder.append(currentChar);
+            stream.mark(Integer.MAX_VALUE);
             currentChar = (char) stream.read();
         }
-        return Double.parseDouble(stringBuilder.toString());
+        stream.reset();
+        Integer intValue;
+        try{
+            intValue = Integer.parseInt(stringBuilder.toString());
+        }catch(NumberFormatException ex){
+            return null;
+        }
+        return intValue;
     }
 
     private String readString(InputStream stream) throws IOException {
-        if(stream.available() <= 0) return null;
-        StringBuilder stringBuilder = new StringBuilder();
         char currentChar = (char) stream.read();
-        while(stream.available() > 0 && currentChar != DOUBLE_QUOTES){
+        if(currentChar != DOUBLE_QUOTES) return null;
+        if(stream.available() <= 0) return null;
+        currentChar = (char) stream.read();
+        StringBuilder stringBuilder = new StringBuilder();
+        while(stream.available() > 0){
             stringBuilder.append(currentChar);
             currentChar = (char) stream.read();
+            if(currentChar == DOUBLE_QUOTES) break;
         }
         if(currentChar != DOUBLE_QUOTES) return null;
         return stringBuilder.toString();

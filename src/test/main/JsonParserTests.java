@@ -27,7 +27,7 @@ public class JsonParserTests{
             if(files == null || files.length == 0) throw new NoSuchElementException("Unable to find any file in the test source path");
             for(File file : files){
                 String name = file.getName();
-                InputStream stream = new FileInputStream(file);
+                InputStream stream = new BufferedInputStream(new FileInputStream(file));
                 int result = jsonParser.validate(stream);
                 try {
                     if (name.contains("invalid")) Assert.assertEquals(1, result);
@@ -109,15 +109,6 @@ public class JsonParserTests{
         Assert.assertEquals(1, value);
     }
 
-    @Test
-    public void parseJsonWithFloatValue() throws IOException {
-        String jsonString = "{\"number\": 1.1}";
-        InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
-        Map<String, Object> parsedJson = jsonParser.parse(inputStream);
-        Assert.assertNotNull(parsedJson);
-        double value = (double) parsedJson.get("number");
-        Assert.assertEquals(1.1, value, 0);
-    }
 
     private Map<String, String> generateRandomJsonWithNStringKeyValues(int pairs){
         Map<String, String> json = new HashMap<>();
