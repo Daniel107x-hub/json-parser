@@ -2,6 +2,7 @@ package src.main;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InvalidObjectException;
 import java.util.*;
 
 public class JsonParser {
@@ -39,54 +40,64 @@ public class JsonParser {
     public Map<String, Object> parse(InputStream json) throws IOException {
         if(json.available() == 0) return null;
         List<Object> tokens = getTokens(json);
+        Object result = null;
         if(tokens == null) return null;
-        return readJsonTokens(tokens, 0);
+        try
+        {
+            result = parseTokens(tokens);
+            return (Map<String, Object>) result;
+        }catch(InvalidObjectException ex){
+            return null;
+        }
     }
 
-    private Map<String, Object> readJsonTokens(List<Object> tokens, Integer startIndex){
-        Map<String, Object> map = new HashMap<>();
-        if(!tokens.get(0).equals(OPENING_CURLY_BRACE)) return null;
-        for(Integer index = startIndex ; index < tokens.size() ; index++){
-            Object token = tokens.get(index);
-            if(token instanceof Character && JSON_SYNTAX.contains((char) token)){
-                char charToken = (char) token;
-                if(charToken == CLOSING_CURLY_BRACE) return map;
-                if(charToken == COMMA){
-                    Object nextToken = tokens.get(index + 1);
-                    if(!(nextToken instanceof String)) return null;
+    private Object parseTokens(List<Object> tokens) throws InvalidObjectException {
+        Object accumulator = null;
+        Object token = tokens.remove(0);
+        if(token != null && token.equals(OPENING_CURLY_BRACE)) accumulator = new HashMap<>();
+        else if(token != null && token.equals(OPENING_BRACKET)) accumulator = new ArrayList<>();
+        if(accumulator == null) return token;
+        while(!tokens.isEmpty()){
+            token = tokens.remove(0);
+            if(token != null && token.equals(CLOSING_CURLY_BRACE)){
+                if(!(accumulator instanceof Map)) throw new InvalidObjectException("Not valid character");
+                return accumulator;
+            }
+            if(token != null && token.equals(CLOSING_BRACKET)){
+                if(!(accumulator instanceof List)) throw new InvalidObjectException("Not valid character");
+                return accumulator;
+            }
+            if(accumulator instanceof List){
+                if((token instanceof Character) && JSON_SYNTAX.contains((char)token)) throw new InvalidObjectException("Not valid character");
+                ((List<Object>)accumulator).add(token);
+                token = tokens.get(0);
+                if(token instanceof Character && token.equals(CLOSING_BRACKET)) continue;
+                if(!(token instanceof Character && token.equals(COMMA))) throw new InvalidObjectException("Not valid character");
+                tokens.remove(0);
+                token = tokens.get(0);
+                if(token instanceof Character && token.equals(CLOSING_BRACKET)) throw new InvalidObjectException("Not valid character at this position"); // If this is the final value, the net token could be a curly brace
+            }
+            if(accumulator instanceof Map){
+                if(!(token instanceof String)) throw new InvalidObjectException("Not valid character");
+                String key = (String)token;
+                token = tokens.remove(0); //After key, there should be a semicolon
+                if(!(token instanceof Character && token.equals(SEMICOLON))) throw new InvalidObjectException("Not valid character");
+                try // Then we try to get the value
+                {
+                    Object value = parseTokens(tokens);
+                    ((Map<String, Object>)accumulator).put(key, value);
+                }catch(InvalidObjectException ex){
+                    break;
                 }
-                if(charToken == SEMICOLON){
-                    Object key = tokens.get(index - 1);
-                    if(!(key instanceof String)) return null;
-                    Object value = readValue(tokens, index + 1);
-                    map.put((String) key, value);
-                  }
+                token = tokens.get(0);
+                if(token instanceof Character && token.equals(CLOSING_CURLY_BRACE)) continue; // If this is the final value, the net token could be a curly brace
+                if(!(token instanceof Character && token.equals(COMMA))) throw new InvalidObjectException("Not valid character"); // If not, there should be a comma, but after a comma there cannot be a curly brace
+                tokens.remove(0);
+                token = tokens.get(0);
+                if(token instanceof Character && token.equals(CLOSING_CURLY_BRACE)) throw new InvalidObjectException("Not valid character at this position"); // If this is the final value, the net token could be a curly brace
             }
         }
-        return map;
-    }
-
-    /**
-     * Reads the possible value after a semicolon according to the json syntax.
-     *
-     * <p>If the token is a single character in the json syntax, it needs to eb interpreted accordingly. Possible value characters are braces and brackets.
-     * In the case of curly braces, the nested json needs to be interpreted.
-     * In the case of brackets, the json array needs to be read.
-     *
-     * <p>If the token is a solid value, ust return it.
-     * @param tokens - List of json tokens from the input stream
-     * @param index - Current index where interpretation is happening
-     * @return Interpretation of the section being read
-     */
-    private Object readValue(List<Object> tokens, Integer index){
-        Object token = tokens.get(index);
-        if(token instanceof Character && JSON_SYNTAX.contains((char) token)){
-            char charToken = (char) token;
-            if(charToken == OPENING_CURLY_BRACE){
-                return readJsonTokens(tokens, index + 1);
-            }
-        }
-        return token;
+        return null;
     }
 
     /**

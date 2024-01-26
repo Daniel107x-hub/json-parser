@@ -5,13 +5,12 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import src.main.JsonParser;
-
 import java.io.*;
 import java.util.*;
 
 public class JsonParserTests{
      private static final String TEST_RESOURCES_PATH = "src/test/resources/";
-     private static final String[] TEST_DIRECTORIES = {"step1", "step2", "step3"};
+     private static final String[] TEST_DIRECTORIES = {"step1", "step2", "step3", "step4"};
     private JsonParser jsonParser;
 
     @Before
@@ -92,6 +91,15 @@ public class JsonParserTests{
     }
 
     @Test
+    public void parse2SStringKeyValuePairs() throws IOException {
+        String jsonString = "{\"key\": \"value\", \"key1\": \"value1\"}";
+        InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
+        Map<String, Object> parsedJson = jsonParser.parse(inputStream);
+        Assert.assertEquals("value", parsedJson.get("key"));
+        Assert.assertEquals("value1", parsedJson.get("key1"));
+    }
+
+    @Test
     public void failToParseInvalidJsonString() throws IOException {
         String jsonString = "{\"key\":\"value\",}";
         InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
@@ -135,6 +143,29 @@ public class JsonParserTests{
         InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
         int result = jsonParser.validate(inputStream);
         Assert.assertEquals(1, result);
+    }
+
+    @Test
+    public void parseJsonWithListValue() throws IOException{
+        String jsonString = "{\"number\": [\"hi\", 1, \"my\"]}";
+        InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
+        Map<String, Object> parsedJson = jsonParser.parse(inputStream);
+        Assert.assertNotNull(parsedJson);
+        Object value = parsedJson.get("number");
+        Assert.assertNotNull(value);
+    }
+
+    @Test
+    public void parseJsonWithEmptyListValue() throws IOException{
+        String jsonString = "{\"number\": []}";
+        InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
+        Map<String, Object> parsedJson = jsonParser.parse(inputStream);
+        Assert.assertNotNull(parsedJson);
+        Object value = parsedJson.get("number");
+        Assert.assertNotNull(value);
+        Assert.assertTrue(value instanceof List);
+        List<Object> result = (List<Object>) value;
+        Assert.assertEquals(0, result.size());
     }
 
 
