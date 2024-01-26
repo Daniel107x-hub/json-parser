@@ -26,18 +26,18 @@ public class JsonParser {
     ));
 
     public int validate(InputStream json) {
-        Map<String, Object> parsedJson;
+        Object parsedJson;
         try {
             parsedJson = this.parse(json);
         }catch(IOException exception){
             parsedJson = null;
             System.out.println("Exception when reading from IO");
         }
-        if(parsedJson != null) return 0;
+        if((parsedJson instanceof List || parsedJson instanceof Map)) return 0;
         return 1;
     }
 
-    public Map<String, Object> parse(InputStream json) throws IOException {
+    public Object parse(InputStream json) throws IOException {
         if(json.available() == 0) return null;
         List<Object> tokens = getTokens(json);
         Object result = null;
@@ -45,8 +45,9 @@ public class JsonParser {
         try
         {
             result = parseTokens(tokens);
-            return (Map<String, Object>) result;
-        }catch(InvalidObjectException ex){
+            if(!tokens.isEmpty()) return null;
+            return result;
+        }catch(Exception ex){
             return null;
         }
     }
@@ -213,6 +214,7 @@ public class JsonParser {
             currentChar = (char) stream.read();
         }
         stream.reset();
+        if(stringBuilder.length() > 0 && stringBuilder.charAt(0) == '0') return null;
         try{
             return Integer.parseInt(stringBuilder.toString());
         }catch(NumberFormatException ex){

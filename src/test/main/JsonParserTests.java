@@ -59,7 +59,7 @@ public class JsonParserTests{
     public void parsesBasicJsonStringCorrectly() throws IOException {
         String jsonString = "{}";
         InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
-        Map<String, Object> parsedJson = jsonParser.parse(inputStream);
+        Map<String, Object> parsedJson = (Map<String, Object>)jsonParser.parse(inputStream);
         Assert.assertNotNull(parsedJson);
         Assert.assertEquals(0, parsedJson.size());
     }
@@ -68,7 +68,7 @@ public class JsonParserTests{
     public void unableToParseInvalidJson() throws IOException {
         String jsonString = "";
         InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
-        Map<String, Object> parsedJson = jsonParser.parse(inputStream);
+        Map<String, Object> parsedJson = (Map<String, Object>)jsonParser.parse(inputStream);
         Assert.assertNull(parsedJson);
     }
 
@@ -79,7 +79,7 @@ public class JsonParserTests{
         Map<String, String> json = generateRandomJsonWithNStringKeyValues(keyValuePairs);
         String jsonString = new Gson().toJson(json);
         InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
-        Map<String, Object> parsedJson = jsonParser.parse(inputStream);
+        Map<String, Object> parsedJson = (Map<String, Object>)jsonParser.parse(inputStream);
         Assert.assertNotNull(parsedJson);
         Assert.assertEquals(keyValuePairs, parsedJson.size());
         for(String key : json.keySet()){
@@ -94,7 +94,7 @@ public class JsonParserTests{
     public void parse2SStringKeyValuePairs() throws IOException {
         String jsonString = "{\"key\": \"value\", \"key1\": \"value1\"}";
         InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
-        Map<String, Object> parsedJson = jsonParser.parse(inputStream);
+        Map<String, Object> parsedJson = (Map<String, Object>)jsonParser.parse(inputStream);
         Assert.assertEquals("value", parsedJson.get("key"));
         Assert.assertEquals("value1", parsedJson.get("key1"));
     }
@@ -103,7 +103,7 @@ public class JsonParserTests{
     public void failToParseInvalidJsonString() throws IOException {
         String jsonString = "{\"key\":\"value\",}";
         InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
-        Map<String, Object> parsedJson = jsonParser.parse(inputStream);
+        Map<String, Object> parsedJson = (Map<String, Object>)jsonParser.parse(inputStream);
         Assert.assertNull(parsedJson);
     }
 
@@ -111,7 +111,7 @@ public class JsonParserTests{
     public void parseJsonWithNumericValue() throws IOException {
         String jsonString = "{\"number\": 1}";
         InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
-        Map<String, Object> parsedJson = jsonParser.parse(inputStream);
+        Map<String, Object> parsedJson = (Map<String, Object>)jsonParser.parse(inputStream);
         Assert.assertNotNull(parsedJson);
         int value = (int) parsedJson.get("number");
         Assert.assertEquals(1, value);
@@ -121,7 +121,7 @@ public class JsonParserTests{
     public void parseJsonWithBooleanValue() throws IOException {
         String jsonString = "{\"number\": false}";
         InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
-        Map<String, Object> parsedJson = jsonParser.parse(inputStream);
+        Map<String, Object> parsedJson = (Map<String, Object>)jsonParser.parse(inputStream);
         Assert.assertNotNull(parsedJson);
         boolean value = (boolean) parsedJson.get("number");
         Assert.assertFalse(value);
@@ -131,7 +131,7 @@ public class JsonParserTests{
     public void parseJsonWithNullValue() throws IOException {
         String jsonString = "{\"number\": null}";
         InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
-        Map<String, Object> parsedJson = jsonParser.parse(inputStream);
+        Map<String, Object> parsedJson = (Map<String, Object>)jsonParser.parse(inputStream);
         Assert.assertNotNull(parsedJson);
         Object value = parsedJson.get("number");
         Assert.assertNull(value);
@@ -149,7 +149,7 @@ public class JsonParserTests{
     public void parseJsonWithListValue() throws IOException{
         String jsonString = "{\"number\": [\"hi\", 1, \"my\"]}";
         InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
-        Map<String, Object> parsedJson = jsonParser.parse(inputStream);
+        Map<String, Object> parsedJson = (Map<String, Object>)jsonParser.parse(inputStream);
         Assert.assertNotNull(parsedJson);
         Object value = parsedJson.get("number");
         Assert.assertNotNull(value);
@@ -159,7 +159,7 @@ public class JsonParserTests{
     public void parseJsonWithEmptyListValue() throws IOException{
         String jsonString = "{\"number\": []}";
         InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
-        Map<String, Object> parsedJson = jsonParser.parse(inputStream);
+        Map<String, Object> parsedJson = (Map<String, Object>)jsonParser.parse(inputStream);
         Assert.assertNotNull(parsedJson);
         Object value = parsedJson.get("number");
         Assert.assertNotNull(value);
