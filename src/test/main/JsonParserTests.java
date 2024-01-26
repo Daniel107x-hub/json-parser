@@ -129,6 +129,14 @@ public class JsonParserTests{
         Assert.assertNull(value);
     }
 
+    @Test
+    public void failValidationForNullValue() throws IOException {
+        String jsonString = "{\"number\": nullEF}";
+        InputStream inputStream = new ByteArrayInputStream(jsonString.getBytes());
+        int result = jsonParser.validate(inputStream);
+        Assert.assertEquals(1, result);
+    }
+
 
     private Map<String, String> generateRandomJsonWithNStringKeyValues(int pairs){
         Map<String, String> json = new HashMap<>();

@@ -13,10 +13,9 @@ public class JsonParser {
     private static final char SEMICOLON = ':';
     private static final char COMMA = ',';
     private static final char WHITESPACE = ' ';
-    private static final char POINT = '.';
     private static final char CARRIAGE_RETURN = '\r';
     private static final char NEW_LINE = '\n';
-    private static final Set<Character> SPECIAL_CHARACTERS = new HashSet<>(Arrays.asList(
+    private static final Set<Character> JSON_SYNTAX = new HashSet<>(Arrays.asList(
             OPENING_CURLY_BRACE,
             CLOSING_CURLY_BRACE,
             OPENING_BRACKET,
@@ -39,19 +38,17 @@ public class JsonParser {
 
     public Map<String, Object> parse(InputStream json) throws IOException {
         if(json.available() == 0) return null;
-        Map<String, Object> map;
         List<Object> tokens = getTokens(json);
         if(tokens == null) return null;
-        if(!tokens.get(0).equals(OPENING_CURLY_BRACE)) return null;
-        map = readJsonTokens(tokens, 0);
-        return map;
+        return readJsonTokens(tokens, 0);
     }
 
     private Map<String, Object> readJsonTokens(List<Object> tokens, Integer startIndex){
         Map<String, Object> map = new HashMap<>();
+        if(!tokens.get(0).equals(OPENING_CURLY_BRACE)) return null;
         for(Integer index = startIndex ; index < tokens.size() ; index++){
             Object token = tokens.get(index);
-            if(token instanceof Character && SPECIAL_CHARACTERS.contains((char) token)){
+            if(token instanceof Character && JSON_SYNTAX.contains((char) token)){
                 char charToken = (char) token;
                 if(charToken == CLOSING_CURLY_BRACE) return map;
                 if(charToken == COMMA){
@@ -69,27 +66,45 @@ public class JsonParser {
         return map;
     }
 
+    /**
+     * Reads the possible value after a semicolon according to the json syntax.
+     *
+     * <p>If the token is a single character in the json syntax, it needs to eb interpreted accordingly. Possible value characters are braces and brackets.
+     * In the case of curly braces, the nested json needs to be interpreted.
+     * In the case of brackets, the json array needs to be read.
+     *
+     * <p>If the token is a solid value, ust return it.
+     * @param tokens - List of json tokens from the input stream
+     * @param index - Current index where interpretation is happening
+     * @return Interpretation of the section being read
+     */
     private Object readValue(List<Object> tokens, Integer index){
         Object token = tokens.get(index);
-        if(token instanceof Character && SPECIAL_CHARACTERS.contains((char) token)){
+        if(token instanceof Character && JSON_SYNTAX.contains((char) token)){
             char charToken = (char) token;
             if(charToken == OPENING_CURLY_BRACE){
                 return readJsonTokens(tokens, index + 1);
             }
         }
-        if(token instanceof String) return token;
-        if(token instanceof Integer) return token;
-        if(token instanceof Boolean) return token;
-        return null;
+        return token;
     }
 
+    /**
+     * Tokenizes the input stream in tokens that belong to the json syntax. Returns the list with ll json tokens.
+     *
+     * <p> If unable to tokenize any character sequence, {@code null} will be returned.
+     * @param json - Input stream, not null
+     * @return {@code List} with all json tokens
+     * @throws IOException - In case any read operation fail
+     */
     private List<Object> getTokens(InputStream json) throws IOException {
+        Objects.requireNonNull(json);
         List<Object> tokenList = new ArrayList<>();
         while(json.available() > 0){
             json.mark(Integer.MAX_VALUE);
             char c = (char) json.read();
             if(WHITESPACE == c || CARRIAGE_RETURN == c || NEW_LINE == c) continue;
-            if(SPECIAL_CHARACTERS.contains(c)){
+            if(JSON_SYNTAX.contains(c)){
                 tokenList.add(c);
                 continue;
             }
@@ -127,6 +142,14 @@ public class JsonParser {
         return tokenList;
     }
 
+    /**
+     * This method will return a boolean {@code true} or {@code false} if the upcoming characters in the InputStream represent the null value.
+     *
+     * <p>This method will accumulate incoming characters from the stream. If the sequence represents a null value, {@code true} will be returned. In any other case, the return value will be {@code false}
+     * @param stream - The input stream, not null
+     * @return boolean - {@code true} if the chracter sequence represents a {@code null} value. {@code false} in any other case
+     * @throws IOException -  if an I/O error occurs when reading from stream.
+     */
     private boolean readNull(InputStream stream) throws IOException {
         char currentChar = (char) stream.read();
         for(char letter : "null".toCharArray()){
@@ -138,6 +161,14 @@ public class JsonParser {
         return true;
     }
 
+    /**
+     * This method will return a boolean {@code true} or {@code false} if the upcoming characters in the InputStream represent either of the 2 boolean values.
+     *
+     * <p>This method will accumulate incoming characters from the stream. If the sequence represents either of the booleans, the boolean value will be returned, else,  this method will return {@code null}.
+     * @param stream - The input stream, not null
+     * @return Boolean - Parsed boolean from stream or {@code null}
+     * @throws IOException -  if an I/O error occurs when reading from stream.
+     */
     private Boolean readBoolean(InputStream stream) throws IOException {
         char currentChar = (char) stream.read();
         String booleanMatch;
@@ -154,10 +185,12 @@ public class JsonParser {
     }
 
     /**
-     * Numbers in json are read until we find a character which is not a number
-     * @param stream
-     * @return Integer value if parseable or null
-     * @throws IOException
+     * This method will return a string if the upcoming characters in the InputStream form an integer.
+     *
+     * <p>This method will accumulate incoming digits from the stream. If a whitespace is found, the accumulating ends and the formed integer is returned. If any non digit is found, this method will return {@code null}.
+     * @param stream - The input stream, not null
+     * @return Integer - Parsed integer from stream or {@code null}
+     * @throws IOException -  if an I/O error occurs when reading from stream.
      */
     private Integer readNumeric(InputStream stream) throws IOException {
         char currentChar = (char) stream.read();
@@ -169,16 +202,25 @@ public class JsonParser {
             currentChar = (char) stream.read();
         }
         stream.reset();
-        Integer intValue;
         try{
-            intValue = Integer.parseInt(stringBuilder.toString());
+            return Integer.parseInt(stringBuilder.toString());
         }catch(NumberFormatException ex){
-            return null;
+            System.out.println("Read data is not a number");
         }
-        return intValue;
+        return null;
     }
 
+    /**
+     * This method will return a string if the upcoming characters in the InputStream form a json string.
+     *
+     * <p>By definition, the json string will start and end with double quotes. If that's not the case,
+     * this method will return {@code null}.
+     * @param stream - The input stream, not null
+     * @return String between double quotes or null if quotes neither opened nor closed
+     * @throws IOException -  if an I/O error occurs when reading from stream.
+     */
     private String readString(InputStream stream) throws IOException {
+        Objects.requireNonNull(stream);
         char currentChar = (char) stream.read();
         if(currentChar != DOUBLE_QUOTES) return null;
         if(stream.available() <= 0) return null;
